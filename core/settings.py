@@ -1,14 +1,31 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
+# ─────────────────────────────────────────────
+# SECURITY
+# ─────────────────────────────────────────────
+
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-change-this-in-production'
+)
+
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1,.onrender.com'
+).split(',')
+
+# ─────────────────────────────────────────────
+# APPS
+# ─────────────────────────────────────────────
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -17,19 +34,28 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Third party
     'rest_framework',
     'corsheaders',
     'django_filters',
     'drf_spectacular',
+
     # Local
     'clientes',
     'contratos',
 ]
 
+# ─────────────────────────────────────────────
+# MIDDLEWARE
+# ─────────────────────────────────────────────
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # 👈 REQUIRED FOR RENDER
+
     'corsheaders.middleware.CorsMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -39,6 +65,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
+
+# ─────────────────────────────────────────────
+# TEMPLATES
+# ─────────────────────────────────────────────
 
 TEMPLATES = [
     {
@@ -58,16 +88,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# ─────────────────────────────────────────────
+# DATABASE (RENDER / POSTGRES READY)
+# ─────────────────────────────────────────────
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'ms_clientes_db'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.parse(
+        os.getenv('DATABASE_URL', f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+    )
 }
+
+# ─────────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────────
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -76,16 +109,34 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ─────────────────────────────────────────────
+# INTERNATIONALIZATION
+# ─────────────────────────────────────────────
+
 LANGUAGE_CODE = 'es-mx'
 TIME_ZONE = 'America/Mexico_City'
 USE_I18N = True
 USE_TZ = True
 
+# ─────────────────────────────────────────────
+# STATIC FILES (RENDER FIX)
+# ─────────────────────────────────────────────
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ─────────────────────────────────────────────
+# DEFAULT AUTO FIELD
+# ─────────────────────────────────────────────
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── DRF ──────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# DRF
+# ─────────────────────────────────────────────
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -103,16 +154,28 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# ── CORS ─────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# CORS
+# ─────────────────────────────────────────────
+
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:5173,http://localhost:3000'
 ).split(',')
 
-# ── URL base de ms-equipos (para validaciones cruzadas opcionales) ────────────
+# ─────────────────────────────────────────────
+# MICRO-SERVICE CONFIG
+# ─────────────────────────────────────────────
+
 MS_EQUIPOS_URL = os.getenv('MS_EQUIPOS_URL', 'http://localhost:8001')
 
-# ── OpenAPI ───────────────────────────────────────────────────────────────────
+# opcional seguridad cross-service
+MS_EQUIPOS_TIMEOUT = int(os.getenv('MS_EQUIPOS_TIMEOUT', '5'))
+
+# ─────────────────────────────────────────────
+# OPENAPI
+# ─────────────────────────────────────────────
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'PrintControl — Clientes API',
     'DESCRIPTION': 'Microservicio de gestión de clientes, contratos y arrendamientos.',
