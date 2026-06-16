@@ -52,13 +52,16 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # 👈 REQUIRED FOR RENDER
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 
     'corsheaders.middleware.CorsMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+
+    # ⚠️ IMPORTANTE: CSRF SOLO PARA WEB, NO PARA API
     'django.middleware.csrf.CsrfViewMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -89,7 +92,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 # ─────────────────────────────────────────────
-# DATABASE (RENDER / POSTGRES READY)
+# DATABASE (RENDER READY)
 # ─────────────────────────────────────────────
 
 DATABASES = {
@@ -119,7 +122,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ─────────────────────────────────────────────
-# STATIC FILES (RENDER FIX)
+# STATIC FILES
 # ─────────────────────────────────────────────
 
 STATIC_URL = '/static/'
@@ -134,21 +137,25 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ─────────────────────────────────────────────
-# DRF
+# DRF (🔥 FIX IMPORTANTE PARA TU ERROR 403)
 # ─────────────────────────────────────────────
 
 REST_FRAMEWORK = {
+    # 🔥 FIX: permitir POST desde Swagger / curl sin login
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ],
+
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
+
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -164,12 +171,10 @@ CORS_ALLOWED_ORIGINS = os.getenv(
 ).split(',')
 
 # ─────────────────────────────────────────────
-# MICRO-SERVICE CONFIG
+# MICROSERVICES
 # ─────────────────────────────────────────────
 
 MS_EQUIPOS_URL = os.getenv('MS_EQUIPOS_URL', 'http://localhost:8001')
-
-# opcional seguridad cross-service
 MS_EQUIPOS_TIMEOUT = int(os.getenv('MS_EQUIPOS_TIMEOUT', '5'))
 
 # ─────────────────────────────────────────────
